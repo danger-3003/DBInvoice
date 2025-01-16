@@ -1,12 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { ToWords } from 'to-words';
+import ReactToPrint from "react-to-print";
 
 function App() {
     const date=new Date();
+    const toWords = new ToWords();
     const [sgst, setSGST] = useState(false);
     const [cgst, setCGST] = useState(false);
+    const printRef = useRef(null);
+    const [taxableValue, setTaxableValue] = useState(0);
+    const [invoiceValue, setInvoiceValue] = useState(0);
+    const [SGST, setSGSTValue] = useState(0);
+    const [CGST, setCGSTValue] = useState(0);
+
+
     const [billDetails, setBillDetails] = useState({
         billTO: "",
         customerAddress: "",
+        customerGSTIN:"",
         quotationNumber: "",
         items: [],
         sgstValue: "",
@@ -18,6 +29,31 @@ function App() {
         quantity: "",
         unitPrice: "",
     });
+    
+    useEffect(() => {
+        // Calculate taxable value and taxes whenever billDetails.items changes
+        const newTaxableValue = billDetails.items.reduce((acc, item) => {
+            return acc + item.quantity * item.unitPrice;
+        }, 0);
+        let totalValue=0;
+        if(sgst)
+        {
+            setSGSTValue((newTaxableValue * 0.09).toFixed(2));
+        }
+        else{
+            setSGSTValue(0);
+        }
+        if(cgst)
+        {
+            setCGSTValue((newTaxableValue * 0.09).toFixed(2));
+        }
+        else{
+            setCGSTValue(0);
+        }
+        setTaxableValue(newTaxableValue);
+        totalValue+=(Number(taxableValue)+Number(SGST)+Number(CGST));
+        setInvoiceValue(totalValue);
+    }, [billDetails.items, cgst, sgst, CGST, SGST, taxableValue]);
 
     const handleAddItem = (e) => {
         e.preventDefault();
@@ -27,8 +63,6 @@ function App() {
         });
         setTableItems({ description: "", quantity: "", unitPrice: "" });
     };
-
-    console.log(billDetails);
 
     return (
         <div className="flex items-center justify-center">
@@ -68,7 +102,7 @@ function App() {
                             <p className="pb-3 text-xl font-semibold uppercase text-blue-600">
                                 2. Receipient Details
                             </p>
-                            <div className="flex items-start justify-start flex-wrap gap-5">
+                            <div className="flex items-start justify-start flex-wrap gap-3">
                                 <div className="flex items-start justify-center flex-col gap-2">
                                     <h1>Bill TO</h1>
                                     <input
@@ -101,6 +135,22 @@ function App() {
                                         }}
                                     />
                                 </div>
+                                <div className="flex items-start justify-center flex-col gap-2">
+                                    <h1>Customer GSTIN</h1>
+                                    <input
+                                        type="text"
+                                        name="Customer Address"
+                                        placeholder="Enter Biller Address"
+                                        className="outline-none rounded px-2 py-1 border border-blue-500 shadow-md shadow-black/20"
+                                        value={billDetails.customerGSTIN}
+                                        onChange={(e) => {
+                                            setBillDetails({
+                                                ...billDetails,
+                                                customerGSTIN: e.target.value,
+                                            });
+                                        }}
+                                    />
+                                </div>
                             </div>
                         </div>
                         {/* Items Details Details */}
@@ -115,7 +165,7 @@ function App() {
                                     </p>
                                     <button
                                         type="submit"
-                                        className="bg-green-400 px-3 py-0.5 rounded-md text-green-950"
+                                        className="bg-green-400 px-3 py-0.5 rounded-md text-green-950 shadow-md shadow-black/30"
                                     >
                                         Add
                                     </button>
@@ -198,17 +248,30 @@ function App() {
                         <div></div>
                     </div>
                 </div>
+                <ReactToPrint
+                    trigger={() => (
+                        <button className="text-white bg-red-500 font-medium px-4 py-1 rounded mb-5">
+                            Print Receipt
+                        </button>
+                    )}
+                    content={() => printRef.current}
+                    pageStyle="@page { size: A4 portrait; margin: 20mm; } body { margin: 20px; }"
+                />
                 <div className="w-full font-[Lora] bg-white flex items-center justify-center">
                     <div className="overflow-x-scroll w-full xl:w-[60rem]">
-                        <div className="flex items-center justify-center flex-col w-[60rem]">
+                        <div ref={printRef} className="flex items-center justify-center flex-col w-[60rem]">
                             {/* Starting Row */}
                             <div className="flex items-center justify-start flex-row h-[15rem]">
                                 <div className="h-full w-[20rem] border border-black">
-                                    <div className=" flex items-center justify-center h-[50%]">
+                                    <div className=" flex items-center justify-center h-[30%]">
                                         <p className="text-center font-bold text-2xl">Quotation</p>
                                     </div>
-                                    <div className="h-[50%] border-t border-black px-5 py-2">
+                                    <div className="h-[70%] border-t border-black px-5 py-2">
                                         <p className="font-semibold text-lg">Bill to:</p>
+                                        {
+                                            billDetails.customerGSTIN !="" &&
+                                            <p><span className="font-medium">GSTIN:</span> {billDetails.customerGSTIN}</p>
+                                        }
                                         <p>{billDetails.billTO}</p>
                                         <p>{billDetails.customerAddress}</p>
                                     </div>
@@ -238,7 +301,7 @@ function App() {
                             {/* Items Row */}
                             <table className="w-[60rem]">
                                 <thead>
-                                    <tr>
+                                    <tr className="h-10">
                                         <td className="border border-black text-center">Item</td>
                                         <td className="border border-black text-center w-[30rem]">Description</td>
                                         <td className="border border-black text-center">Quantity</td>
@@ -246,21 +309,104 @@ function App() {
                                         <td className="border border-black text-center">Total Price (Rs.)</td>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="border border-black">
                                     {   
                                         billDetails.items.length>0 &&
                                         billDetails.items.map((items,key)=>{
                                             return(
-                                            <tr key={key}>
-                                                <td>{key+1}</td>
-                                                <td>{items.description}</td>
-                                                <td>{items.quantity}</td>
-                                                <td>{items.unitPrice}</td>
-                                                <td>{(items.quantity*items.unitPrice).toFixed(2)}</td>
+                                            <tr key={key} className="h-10">
+                                                <td className="text-center border border-black">{key+1}.</td>
+                                                <td className="px-2 border border-black">{items.description}</td>
+                                                <td className="px-2 border border-black">{items.quantity}</td>
+                                                <td className="px-2 border border-black">{items.unitPrice}</td>
+                                                <td className="px-2 border border-black">{(items.quantity*items.unitPrice).toFixed(2)}</td>
                                             </tr>
                                             )
                                         })
                                     }
+                                    <tr className="border border-black h-10">
+                                        <td className=""></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td className="px-2 text-red-700 font-semibold border border-black">Taxable Value</td>
+                                        <td className="px-2 border border-black">{taxableValue.toFixed(2)}</td>
+                                    </tr>
+                                    <tr className="h-10 w-full"></tr>
+                                    {
+                                        sgst && 
+                                        <tr className="h-10 border border-black">
+                                            <td className="border border-black text-center">i</td>
+                                            <td className="px-2">SGST@9.00%</td>
+                                            <td className=""></td>
+                                            <td className=""></td>
+                                            <td className="border border-black px-2">{
+                                                // (taxableValue*(9/100)).toFixed(2)
+                                                SGST
+                                            }</td>
+                                        </tr>
+                                    }
+                                    {
+                                        cgst && 
+                                        <>
+                                            <tr className="h-10 border border-black">
+                                                <td className="border border-black text-center">ii</td>
+                                                <td className="px-2">CGST@9.00%</td>
+                                                <td className=""></td>
+                                                <td className=""></td>
+                                                <td className="border border-black px-2">{
+                                                    // (taxableValue*(9/100)).toFixed(2)
+                                                    CGST
+                                                }</td>
+                                            </tr>
+                                        </>
+                                    }
+                                    {
+                                        (cgst || sgst) && 
+                                        <>
+                                            <tr className="border border-black h-10">
+                                                <td className=""></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td className="px-2 text-red-700 font-semibold border border-black">Invoice Value</td>
+                                                <td className="px-2 border border-black">{invoiceValue}</td>
+                                            </tr>
+                                            <tr className="h-10 w-full"></tr>
+                                        </>
+                                    }
+                                    <tr className="border border-black h-10">
+                                        <td></td>
+                                        <td><span className="font-semibold">In Words: </span>{toWords.convert(taxableValue)}</td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td colSpan={5} className="p-2">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="font-semibold">BANK DETAILS:-</p>
+                                                    <p>UNION BANK OF INDIA , MURALI NAGAR,VISAKHAPATNAM</p>
+                                                    <p><span className="font-semibold">A/C NUMBER-</span> 753601010050187 ; <span className="font-semibold">IFSC:</span> UBIN0810746</p>
+                                                    <p><span className="font-semibold">UPI ID:</span> designblocks@ybl</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xl">For <span className="uppercase font-bold mr-10">Design Blocks</span></p>
+                                                </div>
+                                            </div>
+                                            <div className="text-center mt-3">
+                                                Thank You
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colSpan={5} className="p-2 border border-black">
+                                            <div className="text-sm">
+                                                <p className="font-semibold  mb-5">Terms and Conditions.</p>
+                                                <p>Quotation prices are valid for 20 days from the date of issue.</p>
+                                                <p>Any increase in project scope will result in an additional cost.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
