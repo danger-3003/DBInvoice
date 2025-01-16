@@ -5,6 +5,8 @@ import ReactToPrint from "react-to-print";
 function App() {
     const date=new Date();
     const toWords = new ToWords();
+    const [quotation, setQuotation] = useState(true);
+    const [invoice, setInvoice] = useState(false);
     const [sgst, setSGST] = useState(false);
     const [cgst, setCGST] = useState(false);
     const printRef = useRef(null);
@@ -12,7 +14,6 @@ function App() {
     const [invoiceValue, setInvoiceValue] = useState(0);
     const [SGST, setSGSTValue] = useState(0);
     const [CGST, setCGSTValue] = useState(0);
-
 
     const [billDetails, setBillDetails] = useState({
         billTO: "",
@@ -29,7 +30,7 @@ function App() {
         quantity: "",
         unitPrice: "",
     });
-    
+
     useEffect(() => {
         // Calculate taxable value and taxes whenever billDetails.items changes
         const newTaxableValue = billDetails.items.reduce((acc, item) => {
@@ -76,17 +77,21 @@ function App() {
                                 <span className="text-green-400">Blocks</span>
                             </p>
                         </div>
+                        <div className="flex items-center justify-start gap-5 mb-5">
+                            <div className={`cursor-pointer px-4 py-1 ${quotation?"bg-green-400":"bg-transparent"} border-2 border-green-400 rounded`} onClick={()=>{setQuotation(!quotation),setInvoice(!invoice)}}>Quotation</div>
+                            <div className={`cursor-pointer px-4 py-1 ${invoice?"bg-green-400":"bg-transparent"} border-2 border-green-400 rounded`} onClick={()=>{setQuotation(!quotation),setInvoice(!invoice)}}>Invoice</div>
+                        </div>
                         {/* Invoice Details */}
                         <div className="border-dashed border-2 border-slate-400 rounded-lg p-5 bg-gray-50">
                             <p className="pb-3 text-xl font-semibold uppercase text-blue-600">
-                                1. Invoice Details
+                                1. {invoice?"Invoice":"Quotation"} Details
                             </p>
                             <div className="flex items-center justify-start flex-wrap gap-3">
-                                <h1>Quotation Number</h1>
+                                <h1>{invoice?"Invoice":"Quotation"} Number</h1>
                                 <input
                                     type="text"
                                     name="Quotation Number"
-                                    placeholder="Enter Quotation Number"
+                                    placeholder={`Enter ${invoice?"Invoice":"Quotation"} Number`}
                                     className="outline-none rounded px-2 py-1 border border-blue-500 shadow-md shadow-black/20"
                                     onChange={(e) => {
                                         setBillDetails({
@@ -226,24 +231,28 @@ function App() {
                             <p className="text-xl font-semibold uppercase text-blue-600">
                                 4. GST Info
                             </p>
-                            <label
-                                htmlFor="SGST"
-                                onClick={() => {
-                                    setSGST(!sgst);
-                                }}
-                            >
-                                SGST
-                            </label>
-                            <input type="checkbox" name="sgst" id="SGST" />
-                            <label
-                                htmlFor="CGST"
-                                onClick={() => {
-                                    setCGST(!cgst);
-                                }}
-                            >
-                                CGST
-                            </label>
-                            <input type="checkbox" name="cgst" id="CGST" />
+                            <div className="flex items-center justify-start gap-5 mt-3">
+                                <label
+                                    htmlFor="SGST"
+                                    onClick={() => {
+                                        setSGST(!sgst);
+                                    }}
+                                    className={`${sgst?"bg-red-400":"bg-green-400"} px-5 py-1 rounded duration-300`}
+                                >
+                                    SGST
+                                </label>
+                                <input type="checkbox" name="sgst" id="SGST" className="hidden"/>
+                                <label
+                                    htmlFor="CGST"
+                                    onClick={() => {
+                                        setCGST(!cgst);
+                                    }}
+                                    className={`${cgst?"bg-red-400":"bg-green-400"} px-5 py-1 rounded duration-300`}
+                                >
+                                    CGST
+                                </label>
+                                <input type="checkbox" name="cgst" id="CGST" className="hidden"/>
+                            </div>
                         </div>
                         <div></div>
                     </div>
@@ -264,7 +273,7 @@ function App() {
                             <div className="flex items-center justify-start flex-row h-[15rem]">
                                 <div className="h-full w-[20rem] border border-black">
                                     <div className=" flex items-center justify-center h-[30%]">
-                                        <p className="text-center font-bold text-2xl">Quotation</p>
+                                        <p className="text-center font-bold text-2xl">{invoice?"Invoice":"Quotation"}</p>
                                     </div>
                                     <div className="h-[70%] border-t border-black px-5 py-2">
                                         <p className="font-semibold text-lg">Bill to:</p>
@@ -288,7 +297,7 @@ function App() {
                                     </div>
                                     <div className="flex items-center justify-between flex-row h-10 px-5 border-t border-black">
                                         <div>
-                                            <p className="font-semibold text-lg">Quotation No: <span className="font-normal text-base">{billDetails.quotationNumber}</span></p>
+                                            <p className="font-semibold text-lg">{invoice?"Invoice":"Quotation"} No: <span className="font-normal text-base">{billDetails.quotationNumber}</span></p>
                                         </div>
                                         <div>
                                             <p>Date: <span>{date.toLocaleDateString("en-GB")}</span></p>
@@ -398,15 +407,18 @@ function App() {
                                             </div>
                                         </td>
                                     </tr>
-                                    <tr>
-                                        <td colSpan={5} className="p-2 border border-black">
-                                            <div className="text-sm">
-                                                <p className="font-semibold  mb-5">Terms and Conditions.</p>
-                                                <p>Quotation prices are valid for 20 days from the date of issue.</p>
-                                                <p>Any increase in project scope will result in an additional cost.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    {
+                                        quotation && 
+                                        <tr>
+                                            <td colSpan={5} className="p-2 border border-black">
+                                                <div className="text-sm">
+                                                    <p className="font-semibold  mb-5">Terms and Conditions.</p>
+                                                    <p>Quotation prices are valid for 20 days from the date of issue.</p>
+                                                    <p>Any increase in project scope will result in an additional cost.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
                                 </tbody>
                             </table>
                         </div>
