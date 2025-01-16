@@ -375,7 +375,7 @@ function App() {
                                     }
                                     <tr className="border border-black h-10">
                                         <td></td>
-                                        <td><span className="font-semibold">In Words: </span>{toWords.convert(taxableValue)}</td>
+                                        <td><span className="font-semibold">In Words: </span>{toWords.convert(invoiceValue>0?invoiceValue:taxableValue)}</td>
                                         <td></td>
                                         <td></td>
                                         <td></td>
