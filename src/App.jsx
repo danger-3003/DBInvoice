@@ -65,11 +65,18 @@ function App() {
         setTableItems({ description: "", quantity: "", unitPrice: "" });
     };
 
+    const handleItem=(item)=>{
+        let removedArray=billDetails.items.filter(e=>e!=item);
+        console.log(removedArray);
+        setBillDetails({...billDetails,items:removedArray});
+        console.log(billDetails);
+    }
+
     return (
         <div className="flex items-center justify-center">
             <div className="flex items-center justify-center gap-5 px-5 flex-col py-10 w-full">
-                <div className="">
-                    <div className="font-[Poppins]">
+                <div className="w-full flex items-center justify-center">
+                    <div className="font-[Poppins] w-full lg:w-[50rem]">
                         {/* Heading */}
                         <div className="pb-5 text-3xl">
                             <p className="font-bold text-blue-500">
@@ -159,7 +166,7 @@ function App() {
                             </div>
                         </div>
                         {/* Items Details Details */}
-                        <div className="border-dashed border-2 border-slate-400 rounded-lg my-7 p-5 bg-gray-50">
+                        <div className="border-dashed border-2 border-slate-400 rounded-lg my-7 p-5 bg-gray-50 w-full">
                             <form
                                 className="flex items-start justify-start flex-col"
                                 onSubmit={handleAddItem}
@@ -170,7 +177,7 @@ function App() {
                                     </p>
                                     <button
                                         type="submit"
-                                        className="bg-green-400 px-3 py-0.5 rounded-md text-green-950 shadow-md shadow-black/30"
+                                        className="bg-green-400 px-3 py-2 py-0.5 rounded-md text-green-950 shadow-md shadow-black/30"
                                     >
                                         Add
                                     </button>
@@ -181,6 +188,7 @@ function App() {
                                         <input
                                             type="text"
                                             name="Description"
+                                            required
                                             value={tableItems.description}
                                             placeholder="Enter Quotation Number"
                                             className="outline-none rounded px-2 py-1 border border-blue-500 shadow-md shadow-black/20"
@@ -197,6 +205,7 @@ function App() {
                                         <input
                                             type="number"
                                             name="Quantity"
+                                            required
                                             value={tableItems.quantity}
                                             placeholder="Enter No. Of Products"
                                             className="outline-none rounded px-2 py-1 border border-blue-500 shadow-md shadow-black/20"
@@ -213,6 +222,7 @@ function App() {
                                         <input
                                             type="number"
                                             name="Unit Price"
+                                            required
                                             value={tableItems.unitPrice}
                                             placeholder="Single Product Price"
                                             className="outline-none rounded px-2 py-1 border border-blue-500 shadow-md shadow-black/20"
@@ -226,6 +236,31 @@ function App() {
                                     </div>
                                 </div>
                             </form>
+                            {
+                                billDetails.items.length>0 &&
+                                <div className="overflow-x-scroll w-full py-5">
+                                    <div className="w-[50rem]">
+                                        <table className="w-full">
+                                            <tbody className="w-full">
+                                                {
+                                                    billDetails.items.map((item, index) => {
+                                                        return (
+                                                            <tr key={index} className="">
+                                                                <td className="border border-blue-500 px-3 py-2">{index + 1}</td>
+                                                                <td className="border border-blue-500 px-3 py-2">{item.description}</td>
+                                                                <td className="border border-blue-500 px-3 py-2">{item.quantity}</td>
+                                                                <td className="border border-blue-500 px-3 py-2">{item.unitPrice}</td>
+                                                                <td className="px-3">
+                                                                    <p className="bg-red-500 px-2 py-1 rounded-lg text-center cursor-pointer text-white" onClick={()=>handleItem(item)}>Delete</p>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            }
                         </div>
                         <div className="border-dashed border-2 border-slate-400 rounded-lg my-7 p-5 bg-gray-50">
                             <p className="text-xl font-semibold uppercase text-blue-600">
